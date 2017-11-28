@@ -10,14 +10,14 @@ import numpy as np
 #imageB = cv2.imread('im2.jpg')
 
 # Read the images to be aligned
-im1 = cv2.imread('im1.jpg')
-im2 = cv2.imread('im2.jpg')
+im1 = cv2.imread('im3.jpg')
+im2 = cv2.imread('im4.jpg')
 
 im1 = cv2.resize(im1, None, fx = 0.2, fy = 0.2, interpolation = cv2.INTER_CUBIC)
 im2 = cv2.resize(im2, None, fx = 0.2, fy = 0.2, interpolation = cv2.INTER_CUBIC)
 
-im1 = cv2.fastNlMeansDenoisingColored(im1,None,50,10,7,21)
-im2 = cv2.fastNlMeansDenoisingColored(im2,None,50,10,7,21)
+im1 = cv2.fastNlMeansDenoisingColored(im1,None,50,50,7,21)
+im2 = cv2.fastNlMeansDenoisingColored(im2,None,50,50,7,21)
 
 # Convert images to grayscale
 im1_gray = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
