@@ -5,31 +5,56 @@ import imutils
 import cv2
 import numpy as np
 
-# load the two input images
-#imageA = cv2.imread('im1.jpg')
-#imageB = cv2.imread('im2.jpg')
+
+#im1 = cv2.normalize(im1, im1, 0, 255, cv2.NORM_MINMAX)
+#im2 = cv2.normalize(im2, im2, 0, 255, cv2.NORM_MINMAX)
+
+
+#im1 = cv2.Canny(im1, 10, 250)
+#cv2.imshow('im1', im1)
+
+fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
+import pylab
+import imageio
+filename = 'toothpick.mp4'
+vid = imageio.get_reader(filename,  'ffmpeg')
+images = []
+labels = []
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
+for i in range(350): #350
+  image = vid.get_data(i)
+  fgmask = fgbg.apply(image)
+  dilated = cv2.dilate(fgmask, kernel, iterations=10)
+  dilated = cv2.erode(dilated, kernel, iterations=10)
+
+  cnts = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+  cnts = cnts[0] if imutils.is_cv2() else cnts[1]
+
+  mask = np.zeros_like(image) # Create mask where white is what we want, black otherwise
+  mask = cv2.drawContours(mask, cnts, -1, color=(255, 255, 255), thickness=cv2.FILLED) # Draw filled contour in mask
+  out = np.zeros_like(image) # Extract out the object and place into output image
+  out[mask == 255] = image[mask == 255]
+
+  cv2.imshow('out', out)
+
+  if cv2.waitKey(1) & 0xFF == ord('q'):
+    break
+
+cv2.waitKey(0)
+exit(0)
+
+
+####### Backup code
 
 # Read the images to be aligned
 im1 = cv2.imread('im3.jpg')
 im2 = cv2.imread('im4.jpg')
-
 
 im1 = cv2.resize(im1, None, fx = 0.2, fy = 0.2, interpolation = cv2.INTER_CUBIC)
 im2 = cv2.resize(im2, None, fx = 0.2, fy = 0.2, interpolation = cv2.INTER_CUBIC)
 
 im1_cpy = im1.copy()
 im2_cpy = im2.copy()
-
-#im1 = cv2.Canny(im1, 10, 250)
-#cv2.imshow('im1', im1)
-#cv2.waitKey(0)
-
-#exit(0)
-
-
-
-
-
 
 im1 = cv2.fastNlMeansDenoisingColored(im1,None,50,50,7,21)
 im2 = cv2.fastNlMeansDenoisingColored(im2,None,50,50,7,21)
@@ -89,15 +114,17 @@ grayB = im2_aligned_gray
 
 # compute the Structural Similarity Index (SSIM) between the two
 # images, ensuring that the difference image is returned
-(score, diff) = compare_ssim(im1, im2_aligned, multichannel=True, gaussian_weights=True, full=True)
+(score, diff) = compare_ssim(grayA, grayB, multichannel=True, gaussian_weights=True, full=True)
 diff = (diff * 255).astype("uint8")
 print("SSIM: {}".format(score))
 
 
 
-denoised = cv2.fastNlMeansDenoisingColored(diff,None,50,10,7,21)
+#denoised = cv2.fastNlMeansDenoisingColored(diff,None,50,10,7,21)
+denoised = cv2.fastNlMeansDenoising(diff,None,50,7,21)
 
-diff = cv2.cvtColor(denoised, cv2.COLOR_BGR2GRAY)
+
+diff = denoised #cv2.cvtColor(denoised, cv2.COLOR_BGR2GRAY)
 
 
 
