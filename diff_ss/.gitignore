@@ -1,0 +1,5 @@
+data/vgg
+runs/*
+model.*
+*.mp4
+./*.jpg
