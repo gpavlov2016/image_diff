@@ -12,6 +12,7 @@ from urllib.request import urlretrieve
 from tqdm import tqdm
 import cv2
 import imutils
+import pdb
 
 class DLProgress(tqdm):
     last_block = 0
@@ -58,27 +59,26 @@ def maybe_download_pretrained_vgg(data_dir):
         # Remove zip file to save space
         os.remove(os.path.join(vgg_path, vgg_filename))
 
-fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
-kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
+trans_counter = 1
+trans_output_dir = os.path.join('data', 'edges', str(time.time()))
+if os.path.exists(trans_output_dir):
+    shutil.rmtree(trans_output_dir)
+os.makedirs(trans_output_dir)
+
+def save_transformed_image(image):
+    global trans_counter, trans_output_dir
+    name = "{}.png".format(trans_counter)
+    scipy.misc.imsave(os.path.join(trans_output_dir, name), image)
+    trans_counter += 1
+
 def apply_transformation(image, image_shape):
-    global fgbg, kernel
-    if image_shape is not None:
-        image = scipy.misc.imresize(image, image_shape)
-    fgmask = fgbg.apply(image)
-    dilated = cv2.dilate(fgmask, kernel, iterations=5)
-    dilated = cv2.erode(dilated, kernel, iterations=5)
+    image = cv2.cvtColor( image, cv2.COLOR_BGR2GRAY );
+    image = cv2.Canny(image, 200, 100)
+    save_transformed_image(image)
 
-    cnts = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if imutils.is_cv2() else cnts[1]
-
-    mask = np.zeros_like(image) # Create mask where white is what we want, black otherwise
-    mask = cv2.drawContours(mask, cnts, -1, color=(255, 255, 255), thickness=cv2.FILLED) # Draw filled contour in mask
-    out = np.zeros_like(image) # Extract out the object and place into output image
-    out[mask == 255] = image[mask == 255]
-
-    label = np.array([[False]*image.shape[1]]*image.shape[0])
-    boolmask = (mask == [255, 255, 255]).all(axis=-1)
-    label[boolmask] = True
+    boolmask = (image == 255)
+    label = boolmask.reshape(*boolmask.shape, 1)
+    label = np.concatenate((label, np.invert(label)), axis=2)
     return label
 
 def process_image(image, images, labels, image_shape):
@@ -92,12 +92,8 @@ def process_image(image, images, labels, image_shape):
     #background_color = np.array([255, 0, 0])
     #label[:,:] = background_color
     # threshold = ((image_r[:,:,0] < 100) | (image_r[:,:,1] < 100) | (image_r[:,:,2] < 100))
-    threshold = apply_transformation(image, image_shape)
+    label = apply_transformation(image_r, image_shape)
 
-    #print(threshold.shape)
-    threshold = threshold.reshape(*threshold.shape, 1)
-    #print (threshold.shape)
-    label = np.concatenate((threshold, np.invert(threshold)), axis=2)
     images.append(image_r)
     labels.append(label)
 

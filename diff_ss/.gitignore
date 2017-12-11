@@ -3,3 +3,4 @@ runs/*
 model.*
 *.mp4
 ./*.jpg
+data/edges

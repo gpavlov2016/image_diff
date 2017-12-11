@@ -167,7 +167,7 @@ def run():
     data_dir = './data'
     runs_dir = './runs'
     # tests.test_for_kitti_dataset(data_dir)
-    epochs = 10
+    epochs = 2
     batch_size = 2
     learning_rate = 1e-4
     correct_label = tf.placeholder(tf.float32, shape = [None, image_shape[0], image_shape[1], num_classes])
@@ -196,7 +196,7 @@ def run():
         train_vid = imageio.get_reader(filename,  'ffmpeg')
         filename = 'toothpick2.mp4'
         validation_vid = imageio.get_reader(filename,  'ffmpeg')
-        filename = 'toothpick3.mp4'
+        filename = 'toothpick2.mp4'
         test_vid = imageio.get_reader(filename,  'ffmpeg')
         
         get_batches_fn = helper.gen_batch_function(train_vid, image_shape)
