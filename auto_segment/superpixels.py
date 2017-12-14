@@ -2,6 +2,7 @@ import pdb
 import cv2
 import numpy as np
 
+
 # Settings
 # These settings can be updated when importing this module e.g.
 # import superpixels as sp
@@ -23,11 +24,8 @@ def extract_superpixels(image):
     color_img = np.zeros((height,width,3), np.uint8)
     color_img[:] = (0, 0, 255)
     seeds.iterate(image, num_iterations)
-    labels = seeds.getLabels()
-
-    pdb.set_trace()
-
-    return labels
+    maps = seeds.getLabels()
+    return maps
 
 
 def draw_superpixels(image, labels):
