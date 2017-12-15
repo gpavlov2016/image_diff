@@ -287,6 +287,8 @@ def calibrate():
             #cv2.imshow('img', img)
             #cv2.waitKey(500)
 
+    if len(images) == 0:
+        print("Put images into calib directory.")
     return  cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
 def from_video():
