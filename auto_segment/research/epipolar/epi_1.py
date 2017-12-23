@@ -177,8 +177,12 @@ def flann_matching(img1, img2):
         if m.distance < 0.75 * n.distance:
             good.append([m])
     # cv2.drawMatchesKnn expects list of lists as matches.
-    img3 = cv2.drawMatchesKnn(img1, kp1, img2, kp2, good, flags=2)
+    img3 = cv2.drawMatchesKnn(img1, kp1, img2, kp2, good, outImg=ret, flags=2)
     plt.imshow(img3), plt.show()
+
+def computeCorrespondEpilines(points, which_image, F):
+    pass
+
 
 def match_features(img1, img2, intrinsics, dist):
 
@@ -380,11 +384,13 @@ def match_features(img1, img2, intrinsics, dist):
 
     # Find epilines corresponding to points in right image (second image) and
     # drawing its lines on left image
-    lines1 = cv2.computeCorrespondEpilines(pts2.reshape(-1, 1, 2), 2, F.T)
+    # lines1 = cv2.computeCorrespondEpilines(pts2.reshape(-1, 1, 2), 2, F)
+    lines1 = computeCorrespondEpilines(pts2.reshape(-1, 1, 2), 2, F)
     lines1 = lines1.reshape(-1, 3)
     # Find epilines corresponding to points in left image (first image) and
     # drawing its lines on right image
-    lines2 = cv2.computeCorrespondEpilines(pts1.reshape(-1, 1, 2), 1, F.T)
+    # lines2 = cv2.computeCorrespondEpilines(pts1.reshape(-1, 1, 2), 1, F)
+    lines2 = computeCorrespondEpilines(pts1.reshape(-1, 1, 2), 1, F)
     lines2 = lines2.reshape(-1, 3)
     print('lines1: ', lines1)
     print('lines2: ', lines2)
@@ -464,7 +470,7 @@ def calibrate():
 
     #for i in range(0, len(images), 1):
     #images = ['IMG_20171211_151001.jpg']
-    images = glob.glob('calib/*.jpg')
+    images = glob.glob('../../../calib/*.jpg')
     print(images)
     for fname in images:
         img = cv2.imread(fname)
@@ -522,8 +528,8 @@ print('Intrinsic Matrix: ', mtx)
 #imgL = cv2.imread('img1/IMG_20171217_113125.jpg')
 #imgR = cv2.imread('img1/IMG_20171217_113132.jpg')
 
-imgL = cv2.imread('img2/100_7101.jpg')
-imgR = cv2.imread('img2/100_7106.jpg')
+imgL = cv2.imread('../../data/myleft1.jpg')
+imgR = cv2.imread('../../data/myright1.jpg')
 
 imgL = cv2.cvtColor(imgL, cv2.COLOR_BGR2RGB)
 imgR = cv2.cvtColor(imgR, cv2.COLOR_BGR2RGB)
@@ -552,7 +558,7 @@ plt.show()
 
 
 
-img = cv2.imread('calib/IMG_20171211_151001.jpg')
+img = cv2.imread('../../../calib/IMG_20171211_151001.jpg')
 img = cv2.resize(img, None, fx=0.2, fy=0.2, interpolation=cv2.INTER_CUBIC)
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 h,  w = img.shape[:2]
@@ -570,8 +576,8 @@ plt.figure()
 plt.imshow(dst, 'gray')
 plt.show()
 
-imgL = cv2.cvtColor(cv2.imread('im1.png'), cv2.COLOR_BGR2GRAY)
-imgR = cv2.cvtColor(cv2.imread('im2.png'), cv2.COLOR_BGR2GRAY)
+imgL = cv2.cvtColor(cv2.imread('../../data/myleft1.jpg'), cv2.COLOR_BGR2GRAY)
+imgR = cv2.cvtColor(cv2.imread('../../data/myright1.jpg'), cv2.COLOR_BGR2GRAY)
 
 imgL = cv2.remap(imgL,mapx,mapy,cv2.INTER_LINEAR)
 imgR = cv2.remap(imgR,mapx,mapy,cv2.INTER_LINEAR)

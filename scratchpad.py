@@ -78,9 +78,9 @@ def match_features(img1, img2, intrinsics, dist):
 
     img3 = np.zeros_like(img2)
     # Draw first 10 matches.
-    n_matches = 100
+    n_matches = 10
     img3 = cv2.drawMatches(img1, kp1, img2, kp2, matches[:n_matches], img3, flags=2)
-    #plt.imshow(img3), plt.show()
+    plt.imshow(img3), plt.show()
 
     #findBaselineTriangulation
     pleft = np.eye(3,4)
@@ -168,7 +168,7 @@ def match_features(img1, img2, intrinsics, dist):
 
     '''
 
-    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_LMEDS)
+    F, mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_RANSAC)
     # We select only inlier points
     pts1 = pts1[mask.ravel() == 1]
     pts2 = pts2[mask.ravel() == 1]
@@ -189,15 +189,14 @@ def match_features(img1, img2, intrinsics, dist):
     plt.subplot(122), plt.imshow(img3)
     plt.show()
 
-    exit(0)
 
     E, mask = cv2.findEssentialMat(pts1, pts2, focal=focal, pp=(ppx, ppy))
     print('E: ', E)
     points, R, t, mask = cv2.recoverPose(E, pts1, pts2, focal=focal, pp=(ppx, ppy), mask=mask)
-    print('points: ', points)
+    # print('points: ', points)
     print('R: ', R)
     print('t: ', t)
-    print('mask: ', mask)
+    # print('mask: ', mask)
     M_r = np.hstack((R, t))
     M_l = np.hstack((np.eye(3, 3), np.zeros((3, 1))))
 
@@ -205,6 +204,8 @@ def match_features(img1, img2, intrinsics, dist):
     print(M_r, M_r.shape)
 
     print('angles:',rotationMatrixToEulerAngles(R))
+
+    exit(0)
 
     #triangulate:
 
@@ -315,8 +316,10 @@ ret, mtx, dist, rvecs, tvecs = calibrate()
 print('Intrinsic Matrix: ', mtx)
 
 
-imgL = cv2.imread('im1.jpg')
-imgR = cv2.imread('im2.jpg')
+# imgL = cv2.imread('auto_segment/data/rot1.jpg')
+# imgR = cv2.imread('auto_segment/data/rot2.jpg')
+imgL = cv2.imread('auto_segment/data/myleft1.jpg')
+imgR = cv2.imread('auto_segment/data/myright1.jpg')
 
 imgL = cv2.cvtColor(imgL, cv2.COLOR_BGR2RGB)
 imgR = cv2.cvtColor(imgR, cv2.COLOR_BGR2RGB)
