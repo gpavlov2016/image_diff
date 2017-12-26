@@ -12,13 +12,20 @@ class Graph:
     def __init__(self,graph):
         self.graph = graph # residual graph
         self.org_graph = [i[:] for i in graph]
-        self. ROW = len(graph)
+        self.ROW = len(graph)
         self.COL = len(graph[0])
 
-
-    '''Returns true if there is a path from source 's' to sink 't' in
-    residual graph. Also fills parent[] to store the path '''
+    def normalize_weights(self):
+        """ Normalize the weights of this graph.
+        """
+        pass
+        
     def BFS(self,s, t, parent):
+        """ Breath First Search
+
+        Returns true if there is a path from source 's' to sink 't' in
+        residual graph. Also fills parent[] to store the path.
+        """
 
         # Mark all the vertices as not visited
         visited =[False]*(self.ROW)
@@ -50,8 +57,10 @@ class Graph:
         return True if visited[t] else False
 
 
-    # Returns tne min-cut of the given graph
+    # 
     def min_cut(self, source, sink):
+        """ Returns tne min-cut of the given graph.
+        """
 
         # This array is filled by BFS and to store path
         parent = [-1]*(self.ROW)
@@ -104,5 +113,3 @@ def test():
     source = 0; sink = 5
 
     g.min_cut(source, sink)
-
-# This code is contributed by Neelam Yadav

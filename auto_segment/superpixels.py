@@ -90,33 +90,40 @@ def find_neighbors(sp_map, sp_id):
     neighbors = set(np.unique(np.extract(z, sp_map))) - set([sp_id])
     return neighbors
 
-def w_from_superpixels(spm, weight=1.0):
-    """ Create Edge Adjacency Matrix from SuperpixelsMaps object.
-
+def highlight_superpixel(sp_map, msid):
+    """ Set superpixel msid to 200 while setting
+        others to 0.
     """
-    print("spm total:", spm.total_sp)
+    cp = sp_map.copy()
+    cp[np.where(cp!=msid)] = -1
+    cp[np.where(cp==msid)] = 200
+    cp[np.where(cp==-1)] = 0
+    cp = cp.astype(np.uint8)
+    thresh = cv2.threshold(cp, 100, 255, cv2.THRESH_BINARY)[1]
 
-    W = np.zeros((spm.total_sp, spm.total_sp))
+    return thresh
 
-    sids = list(range(spm.total_sp))
-    nids = [] # neighbor superpixels
-    for sid in sids:
-        map_id, msid = spm.sid2msid(sid)
-        sp_map = spm.maps[map_id]
-        print("map_id:",map_id,"msid:",msid)
-        map_nids = find_neighbors(sp_map, msid)
-        global_map_nids = [] # uses sid instead of msid
-        for nid in map_nids:
-            print("nid:", nid)
-            global_map_nids.append(spm.msid2sid(map_id, nid))
-        print("neighbor of",sid,":",global_map_nids)
+def highlight_superpixels(sp_map, msids):
+    himg = np.zeros((sp_map.shape[0], sp_map.shape[1]))
+    for sid in msids:
+        himg1 = highlight_superpixel(sp_map, sid)
+        himg = np.sum((himg, himg1), axis=0)
+    return himg
 
-        # Set normalized weights to all neighboring edges
-        W[[sid]*len(global_map_nids), list(global_map_nids)] = weight
-        # W[list(global_map_nids), [sid]*len(global_map_nids)] = weight
-
-        nids += global_map_nids
-    return W
+def find_superpixel_center(sp_map, msid):
+    """ Find the coordinate of superpixel center.
+    """
+    himg = highlight_superpixel(sp_map, msid)
+    cnts = cv2.findContours(himg, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[1]
+    main_cnt = cnts[0]
+    for cnt in cnts:
+        if len(cnt) > len(main_cnt):
+            main_cnt = cnt
+    main_cnt = np.array(main_cnt).reshape((-1,1,2)).astype(np.int32)
+    M = cv2.moments(main_cnt)
+    cX = int(M["m10"] / M["m00"])
+    cY = int(M["m01"] / M["m00"])
+    return ((cX, cY), main_cnt)
 
 class SuperpixelsMaps:
     """ A class that translates between a list of maps and superpixels.
