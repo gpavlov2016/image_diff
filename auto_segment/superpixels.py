@@ -175,6 +175,30 @@ class SuperpixelsMaps:
             # print("sid:",sid)
         return sid
 
+    def pick_random_except(self, ids, num=1):
+        """ Pick random superpixels except the ones defined in `ids`
+
+        Useful for when we want to randomly get background superpixels.
+        """
+        all_ids = list(range(self.total_sp))
+        all_sel_ids = [sel_id for sel_id in all_ids if sel_id not in ids]
+
+        if num > len(all_sel_ids):
+            return all_sel_ids
+        else:
+            return random.sample(all_sel_ids, num)
+
+    def pick_local_random_except(self, map_id, ids, num=1):
+        """ Pick random superpixels in a map except the ones defined in `ids`
+        """
+        all_ids = list(range(self.total_sp))
+        all_sel_ids = [sel_id for sel_id in all_ids if sel_id not in ids]
+        
+        if num > len(all_sel_ids):
+            return all_sel_ids
+        else:
+            return random.sample(all_sel_ids, num)
+
 def test_spm():
     """ Test SuperpixelsMaps object
     """

@@ -5,7 +5,6 @@ import numpy as np
 import pdb
 from sklearn.mixture import GaussianMixture
 from helpers import *
-from graph import Graph
 import epipolar as ep
 import pickle
 import models as mo
@@ -16,7 +15,7 @@ def run():
     vid = imageio.get_reader(filename, 'ffmpeg')
 
     # Number of frames to use. NONE for all frames.
-    num_frames = 2
+    num_frames = 1
 
     # How many frames to skip e.g. if the value is 5,
     # then we take frame 0, 5, 10, etc.
@@ -57,7 +56,7 @@ def run():
         sp_map = maps[i]
         obj_id = obj_ids[i]
 
-        # TODO: Another alternative is to keep the images in a list. Which would
+        # TODO: Another alternative is to keep the images in a list. Which one would
         #       be better?
         image = get_smaller_image(vid, frame)
         
@@ -95,6 +94,44 @@ def run():
     log("Working with",num_frames,"frames")
     for i in get_frames_range(vid, num_frames=num_frames):
         frame = i * frame_skip
+
+        sp_map= maps[i]
+        image = get_smaller_image(vid, frame)
+
+        # Find all superpixel ids and centers in the first image.
+        # While doing so, set weights to neighboring superpixels.
+        sp_locs = []
+        sids = []
+        start = time.time()
+        total_sp = np.max(sp_map) + 1
+        log("Setting W with one image (",total_sp,"superpixels)...")
+        counter = 0
+        for msid in range(total_sp):
+            counter+=1
+            sid = spm.msid2sid(i, msid)
+            
+            sp_loc, _ = sp.find_superpixel_center(sp_map, msid)
+            sp_locs.append([sp_loc])
+            sids.append(sid)
+
+            # Neighbor map superpixel ids
+            nmsids = sp.find_neighbors(sp_map, msid)
+            log("  Computing color consistency of", len(nmsids),
+                "superpixel neighbors...")
+            substart = time.time()
+            for nmsid in nmsids:
+                nsid = spm.msid2sid(i, nmsid)
+                W[sid, nsid] = \
+                  mo.compute_color_consistency(
+                    image, sp_map, msid,
+                    image, sp_map, nmsid
+                  )
+            subdiff = (time.time() - substart)
+            log("    Took", subdiff,
+                "seconds (",counter,"/",total_sp,")")
+        diff = (time.time() - start)
+        log("Completed setting W of superpixel neighbors in", diff, "seconds.")
+
         if prev_image is None:
             prev_image = get_smaller_image(vid, frame)
         else:
@@ -103,45 +140,10 @@ def run():
             map_id2 = map_id1 + 1
             log("Map",map_id1,"and",map_id2)
 
-            image = get_smaller_image(vid, frame)
-
             point_pairs = ep.find_point_matches(prev_image, image, mtx,
                                                 n_matches=100, n_features=1000)
             F, mask = ep.find_fundamental_matrix(point_pairs)
 
-            # Find all superpixel ids and centers in the first image.
-            # While doing so, set weights to neighboring superpixels.
-            sp_locs = []
-            sids = []
-            start = time.time()
-            total_sp = np.max(sp_map1) + 1
-            log("Setting W with one image (",total_sp,"superpixels)...")
-            counter = 0
-            for msid in range(total_sp):
-                counter+=1
-                sid = spm.msid2sid(map_id1, msid)
-                
-                sp_loc, _ = sp.find_superpixel_center(sp_map1, msid)
-                sp_locs.append([sp_loc])
-                sids.append(sid)
-
-                # Neighbor map superpixel ids
-                nmsids = sp.find_neighbors(sp_map1, msid)
-                log("  Computing color consistency of", len(nmsids),
-                    "superpixel neighbors...")
-                substart = time.time()
-                for nmsid in nmsids:
-                    nsid = spm.msid2sid(map_id1, nmsid)
-                    W[sid, nsid] = \
-                      mo.compute_color_consistency(
-                        prev_image, sp_map1, msid,
-                        prev_image, sp_map1, nmsid
-                      )
-                subdiff = (time.time() - substart)
-                log("    Took", subdiff,
-                    "seconds (",counter,"/",total_sp,")")
-            diff = (time.time() - start)
-            log("Completed setting W of superpixel neighbors in", diff, "seconds.")
             log("Computing epilines for", len(sp_locs), "superpixels...")
             start = time.time()
             # Compute epilines given superpixel centers.
@@ -189,18 +191,6 @@ def run():
     
     # END - Create W
     # ================
-
-    # generator = visual_hull_not_converged()
-    # for convergence in generator:
-    #     for img in images:
-    #         score = calculate_score(clf_o, clf_b, superpixel)
-    #         scores.append(score)
-
-    #     graph_cut(superpixels)
-    #     # TODO: Enforce silhouette consistency
-
-    #     # Fitting the models from new silhouettes
-
 
 if __name__ == '__main__':
     run()

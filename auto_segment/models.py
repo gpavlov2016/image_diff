@@ -2,25 +2,28 @@ import numpy as np
 import math
 from sklearn.mixture import GaussianMixture
 
+def scale_colors(features, new_range=(-1, 1), ch1=(0,255), ch2=(0,255), ch3=(0,255)):
+    """ Scale colors to -1 and 1
+    """
+    features = features.astype(np.float32)
+    features[:,0] = (((features[:,0] - ch1[0]) / (ch1[1]-ch1[0])) * (new_range[1]-new_range[0])) + new_range[0]
+    features[:,1] = (((features[:,1] - ch2[0]) / (ch2[1]-ch2[0])) * (new_range[1]-new_range[0])) + new_range[0]
+    features[:,2] = (((features[:,2] - ch3[0]) / (ch3[1]-ch3[0])) * (new_range[1]-new_range[0])) + new_range[0]
+    return features
+
+
 def process_superpixel(superpixel):
     """ Process superpixel for training data
     """
-    return superpixel
+    return scale_colors(superpixel)
 
 def calculate_score(clf_o, clf_b, superpixel):
-    score_o = math.exp(clf_o.score(np.array(superpixel)))
-    score_b = math.exp(clf_b.score(np.array(superpixel)))
+    score_o = clf_o.score(np.array(superpixel))
+    score_b = clf_b.score(np.array(superpixel))
     if (score_o + score_b) == 0:
         return 0
     else:
         return (score_o / (score_o + score_b))
-
-def scale_colors(features, ch1=(0,255), ch2=(0,255), ch3=(0,255)):
-    features = features.astype(np.float32)
-    features[:,0] = (features[:,0] - ch1[0]) / (ch1[1]-ch1[0])
-    features[:,1] = (features[:,1] - ch2[0]) / (ch2[1]-ch2[0])
-    features[:,2] = (features[:,2] - ch3[0]) / (ch3[1]-ch3[0])
-    return features
 
 def compute_color_consistency(img1, sp_map1, msid1,
                               img2, sp_map2, msid2,
@@ -32,8 +35,8 @@ def compute_color_consistency(img1, sp_map1, msid1,
     features1 = img1[sp_map1==msid1]
     features2 = img2[sp_map2==msid2]
     
-    features1 = scale_colors(features1)
-    features2 = scale_colors(features2)
+    features1 = scale_colors(features1, new_range=(0, 1))
+    features2 = scale_colors(features2, new_range=(0, 1))
     
     # Using two GMM objects
     gmm1 = GaussianMixture(n_components=n_components, random_state=random_state)
